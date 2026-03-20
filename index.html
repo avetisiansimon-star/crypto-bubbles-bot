@@ -3,99 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto Bubbles Premium</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        body { 
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); 
-            margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica; 
+        :root { --apple-blue: #007AFF; --green: #32D74B; --red: #FF453A; }
+        body { background: radial-gradient(circle, #1c1c1e 0%, #000 100%); color: white; margin: 0; overflow: hidden; font-family: -apple-system, sans-serif; }
+        #header { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-around; z-index: 10; }
+        .stat-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); padding: 10px 15px; border-radius: 15px; font-size: 12px; border: 0.5px solid rgba(255,255,255,0.1); }
+        #details { 
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 45%; 
+            background: rgba(28,28,30,0.98); backdrop-filter: blur(25px);
+            border-top: 0.5px solid rgba(255,255,255,0.1); border-radius: 25px 25px 0 0;
+            transition: 0.4s cubic-bezier(0.1, 0.7, 0.1, 1); padding: 25px; z-index: 100; box-sizing: border-box;
         }
-        #chart { width: 100vw; height: 100vh; }
-        .bubble-group { cursor: pointer; filter: drop-shadow(0 0 15px rgba(255,255,255,0.05)); }
-        
-        .label-symbol { font-size: 15px; font-weight: 700; fill: #ffffff; pointer-events: none; letter-spacing: 0.5px; }
-        .label-percent { font-size: 11px; font-weight: 500; fill: rgba(255,255,255,0.85); pointer-events: none; }
-        
-        /* Smooth scale animation on load */
-        circle { transition: r 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #details.active { bottom: 0; }
+        .btn-add { width: 100%; padding: 15px; margin-top: 20px; background: var(--apple-blue); border: none; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; }
+        .bubble { cursor: pointer; stroke: rgba(255,255,255,0.2); transition: transform 0.2s; }
     </style>
 </head>
 <body>
+    <div id="header">
+        <div class="stat-card">Fear & Greed: <span id="fg-val">...</span></div>
+        <div class="stat-card">Portfolio: <span id="port-val">$0.00</span></div>
+    </div>
     <div id="chart"></div>
-
-    <svg width="0" height="0">
-        <defs>
-            <radialGradient id="greenLiquid" cx="35%" cy="35%" r="60%">
-                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/> <stop offset="20%" stop-color="rgba(120, 255, 200, 0.25)"/>
-                <stop offset="60%" stop-color="rgba(0, 210, 130, 0.1)"/>
-                <stop offset="100%" stop-color="rgba(0, 255, 140, 0.15)"/> </radialGradient>
-
-            <radialGradient id="redLiquid" cx="35%" cy="35%" r="60%">
-                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/>
-                <stop offset="20%" stop-color="rgba(255, 120, 150, 0.25)"/>
-                <stop offset="60%" stop-color="rgba(210, 40, 40, 0.1)"/>
-                <stop offset="100%" stop-color="rgba(255, 60, 60, 0.15)"/>
-            </radialGradient>
-
-            <linearGradient id="edgeRainbow" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
-                <stop offset="50%" stop-color="rgba(200,150,255,0.3)"/>
-                <stop offset="100%" stop-color="rgba(100,255,255,0.5)"/>
-            </linearGradient>
-        </defs>
-    </svg>
+    <div id="details">
+        <div onclick="toggleDetails(false)" style="float:right; color:var(--apple-blue);">Փակել</div>
+        <h2 id="det-name">---</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:14px;">
+            <div>Գին: <b id="det-price"></b></div>
+            <div>24ժ: <b id="det-change"></b></div>
+            <div>Market Cap: <b id="det-cap"></b></div>
+            <div>Volume: <b id="det-vol"></b></div>
+        </div>
+        <button class="btn-add" id="add-to-port">Ավելացնել Պորտֆելում</button>
+    </div>
 
     <script>
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        let currentData = [];
+        let myPortfolio = JSON.parse(localStorage.getItem('crypto_portfolio')) || {};
+        const width = window.innerWidth, height = window.innerHeight;
 
-        async function initApp() {
-            try {
-                const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=45&price_change_percentage=24h');
-                const data = await res.json();
+        async function init() {
+            const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&price_change_percentage=24h');
+            currentData = await res.json();
+            
+            fetch('https://api.alternative.me/fng/').then(r => r.json()).then(d => {
+                document.getElementById('fg-val').innerText = d.data[0].value;
+            });
 
-                const svg = d3.select("#chart").append("svg").attr("width", width).attr("height", height);
+            const svg = d3.select("#chart").append("svg").attr("width", width).attr("height", height);
+            const simulation = d3.forceSimulation(currentData)
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collide", d3.forceCollide(d => Math.abs(d.price_change_percentage_24h) * 6 + 40))
+                .on("tick", () => node.attr("transform", d => `translate(${d.x},${d.y})`));
 
-                const simulation = d3.forceSimulation(data)
-                    .force("center", d3.forceCenter(width / 2, height / 2))
-                    .force("charge", d3.forceManyBody().strength(10))
-                    .force("collide", d3.forceCollide(d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) + 5).strength(0.8))
-                    .alphaDecay(0.01);
+            const node = svg.selectAll("g").data(currentData).enter().append("g")
+                .on("click", (e, d) => toggleDetails(true, d))
+                .call(d3.drag().on("start", dragstart).on("drag", dragged).on("end", dragend));
 
-                const node = svg.selectAll(".bubble-group")
-                    .data(data).enter().append("g")
-                    .attr("class", "bubble-group")
-                    .call(d3.drag()
-                        .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.1).restart(); d.fx = d.x; d.fy = d.y; })
-                        .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
-                        .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+            node.append("circle").attr("r", d => Math.abs(d.price_change_percentage_24h) * 6 + 40)
+                .attr("fill", d => d.price_change_percentage_24h >= 0 ? "rgba(50,215,75,0.2)" : "rgba(255,69,58,0.2)")
+                .attr("stroke", d => d.price_change_percentage_24h >= 0 ? var(--green) : var(--red));
 
-                // 1. Գլխավոր թափանցիկ մարմինը (The Liquid Body)
-                node.append("circle")
-                    .attr("r", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35))
-                    .style("fill", d => d.price_change_percentage_24h >= 0 ? "url(#greenLiquid)" : "url(#redLiquid)")
-                    .style("stroke", "url(#edgeRainbow)")
-                    .style("stroke-width", "0.8px")
-                    .style("backdrop-filter", "blur(8px)");
-
-                // 2. Լրացուցիչ ներքին փայլ վերևում (Specular Highlight)
-                node.append("ellipse")
-                    .attr("rx", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.4)
-                    .attr("ry", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.2)
-                    .attr("cx", d => -Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.25)
-                    .attr("cy", d => -Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.3)
-                    .style("fill", "rgba(255,255,255,0.25)")
-                    .style("filter", "blur(3px)");
-
-                // 3. Տեքստ
-                node.append("text").attr("class", "label-symbol").attr("dy", "-2").attr("text-anchor", "middle").text(d => d.symbol.toUpperCase());
-                node.append("text").attr("class", "label-percent").attr("dy", "16").attr("text-anchor", "middle").text(d => (d.price_change_percentage_24h > 0 ? "+" : "") + d.price_change_percentage_24h.toFixed(2) + "%");
-
-                simulation.on("tick", () => {
-                    node.attr("transform", d => `translate(${d.x},${d.y})`);
-                });
-            } catch (err) { console.error(err); }
+            node.append("text").text(d => d.symbol.toUpperCase()).attr("text-anchor", "middle").attr("dy", ".3em").style("fill", "#fff").style("font-weight", "bold");
+            updatePortfolioDisplay();
         }
-        initApp();
+
+        function toggleDetails(show, coin) {
+            const panel = document.getElementById('details');
+            if(show) {
+                document.getElementById('det-name').innerText = coin.name;
+                document.getElementById('det-price').innerText = "$" + coin.current_price.toLocaleString();
+                document.getElementById('det-change').innerText = coin.price_change_percentage_24h.toFixed(2) + "%";
+                document.getElementById('det-cap').innerText = (coin.market_cap / 1e9).toFixed(1) + "B";
+                document.getElementById('add-to-port').onclick = () => {
+                    let amt = prompt("Քանակը:");
+                    if(amt) { myPortfolio[coin.symbol] = (myPortfolio[coin.symbol] || 0) + parseFloat(amt);
+                    localStorage.setItem('crypto_portfolio', JSON.stringify(myPortfolio)); updatePortfolioDisplay(); }
+                };
+                panel.classList.add('active');
+            } else panel.classList.remove('active');
+        }
+
+        function updatePortfolioDisplay() {
+            let total = 0;
+            Object.entries(myPortfolio).forEach(([sym, amt]) => {
+                const coin = currentData.find(c => c.symbol === sym);
+                if(coin) total += coin.current_price * amt;
+            });
+            document.getElementById('port-val').innerText = "$" + total.toLocaleString();
+        }
+
+        function dragstart(e, d) { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+        function dragged(e, d) { d.fx = e.x; d.fy = e.y; }
+        function dragend(e, d) { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
+        init();
     </script>
 </body>
 </html>
