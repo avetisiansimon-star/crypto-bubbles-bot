@@ -1,482 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hy">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Build | Build Your Professional Website</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Inter:wght@900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        :root {
-            --accent: #a855f7;
-            --bg: #030303;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
-            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        body { 
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); 
+            margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica; 
         }
+        #chart { width: 100vw; height: 100vh; }
+        .bubble-group { cursor: pointer; filter: drop-shadow(0 0 15px rgba(255,255,255,0.05)); }
         
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            color: #fff;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Premium Noise Overlay */
-        .noise {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.05;
-            pointer-events: none;
-        }
-
-        /* High-Impact Typography */
-        .hero-title {
-            font-family: 'Inter', sans-serif;
-            font-weight: 900;
-            letter-spacing: -0.07em;
-            line-height: 0.8;
-            text-transform: uppercase;
-        }
-
-        .floating-nav {
-            backdrop-filter: blur(24px) saturate(180%);
-            background: rgba(10, 10, 10, 0.6);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            padding: 10px 28px;
-        }
-
-        .reveal-up {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .split-line {
-            overflow: hidden;
-            display: block;
-        }
-
-        /* Robot Container */
-        .robot-stage {
-            position: absolute;
-            top: 0;
-            right: -10%;
-            width: 65%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        spline-viewer {
-            pointer-events: auto;
-        }
-
-        .service-card {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            transition: all 0.6s var(--ease);
-            position: relative;
-            overflow: hidden;
-        }
-        .service-card:hover {
-            background: rgba(168, 85, 247, 0.05);
-            border-color: rgba(168, 85, 247, 0.4);
-            transform: translateY(-8px);
-        }
-        .service-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at var(--x) var(--y), rgba(168,85,247,0.15) 0%, transparent 50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .service-card:hover::before { opacity: 1; }
-
-        .btn-elite {
-            background: #fff;
-            color: #000;
-            padding: 22px 48px;
-            border-radius: 100px;
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.15em;
-            transition: all 0.5s var(--ease);
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-elite:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2);
-        }
-
-        .glow-sphere {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(120px);
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.3;
-        }
-
-        .input-premium {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            color: white;
-            transition: all 0.4s var(--ease);
-        }
-        .input-premium:focus {
-            background: rgba(255,255,255,0.05);
-            border-color: var(--accent);
-            outline: none;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
-        }
-
-        /* DISPLAY CARDS STYLES */
-        .display-card {
-            position: absolute;
-            height: 9rem;
-            width: 22rem;
-            transform: skewY(-8deg);
-            user-select: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            border-radius: 0.75rem;
-            border: 2px solid rgba(255,255,255,0.05);
-            background: rgba(20,20,20,0.7);
-            backdrop-filter: blur(8px);
-            padding: 1rem 1.25rem;
-            transition: all 0.7s var(--ease);
-            overflow: hidden;
-        }
-
-        .display-card::after {
-            content: '';
-            position: absolute;
-            right: -0.25rem;
-            top: -5%;
-            height: 110%;
-            width: 20rem;
-            background: linear-gradient(to left, var(--bg), transparent);
-            pointer-events: none;
-        }
-
-        .display-card:hover {
-            border-color: rgba(255,255,255,0.2);
-            background: rgba(30,30,30,0.9);
-        }
-
-        .display-card-container {
-            display: grid;
-            grid-template-areas: 'stack';
-            place-items: center;
-            height: 500px;
-            width: 100%;
-            position: relative;
-        }
-
-        .card-stack-1 { grid-area: stack; z-index: 30; filter: grayscale(100%); }
-        .card-stack-1:hover { transform: skewY(-8deg) translateY(-40px); filter: grayscale(0%); }
-
-        .card-stack-2 { grid-area: stack; z-index: 20; transform: skewY(-8deg) translateX(48px) translateY(40px); filter: grayscale(100%); }
-        .card-stack-2:hover { transform: skewY(-8deg) translateX(48px) translateY(-4px); filter: grayscale(0%); }
-
-        .card-stack-3 { grid-area: stack; z-index: 10; transform: skewY(-8deg) translateX(96px) translateY(80px); }
-        .card-stack-3:hover { transform: skewY(-8deg) translateX(96px) translateY(40px); }
+        .label-symbol { font-size: 15px; font-weight: 700; fill: #ffffff; pointer-events: none; letter-spacing: 0.5px; }
+        .label-percent { font-size: 11px; font-weight: 500; fill: rgba(255,255,255,0.85); pointer-events: none; }
+        
+        /* Smooth scale animation on load */
+        circle { transition: r 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
 </head>
 <body>
+    <div id="chart"></div>
 
-    <div class="noise"></div>
+    <svg width="0" height="0">
+        <defs>
+            <radialGradient id="greenLiquid" cx="35%" cy="35%" r="60%">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/> <stop offset="20%" stop-color="rgba(120, 255, 200, 0.25)"/>
+                <stop offset="60%" stop-color="rgba(0, 210, 130, 0.1)"/>
+                <stop offset="100%" stop-color="rgba(0, 255, 140, 0.15)"/> </radialGradient>
 
-    <!-- Nav -->
-    <nav class="fixed top-8 left-0 w-full z-[100] flex justify-center pointer-events-none">
-        <div class="floating-nav flex items-center gap-12 pointer-events-auto">
-            <span class="font-black tracking-tighter text-sm italic">PIXELBUILD™</span>
-            <div class="hidden md:flex gap-10 text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
-                <a href="#about" class="hover:text-white transition-colors">About</a>
-                <a href="#services" class="hover:text-white transition-colors">Services</a>
-                <a href="#brand" class="hover:text-white transition-colors">Brand</a>
-                <a href="#contact" class="hover:text-white transition-colors">Contact</a>
-            </div>
-            <div class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></div>
-        </div>
-    </nav>
+            <radialGradient id="redLiquid" cx="35%" cy="35%" r="60%">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/>
+                <stop offset="20%" stop-color="rgba(255, 120, 150, 0.25)"/>
+                <stop offset="60%" stop-color="rgba(210, 40, 40, 0.1)"/>
+                <stop offset="100%" stop-color="rgba(255, 60, 60, 0.15)"/>
+            </radialGradient>
 
-    <!-- Hero Section -->
-    <section class="h-[100vh] flex flex-col justify-center px-12 md:px-24 relative overflow-hidden" id="hero">
-        <div class="robot-stage">
-            <script type="module" src="https://unpkg.com/@splinetool/viewer@1.0.93/build/spline-viewer.js"></script>
-            <spline-viewer 
-                url="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode" 
-                class="w-full h-full opacity-60 md:opacity-100"
-            ></spline-viewer>
-        </div>
-
-        <div class="max-w-4xl relative z-10">
-            <div class="mb-6 opacity-40 uppercase tracking-[0.4em] text-[10px] font-bold split-line">
-                <span class="line-inner block">Elite Digital Presence — 2026</span>
-            </div>
-            <h1 class="hero-title text-[15vw] lg:text-[14vw] pointer-events-none">
-                <div class="split-line"><span class="line-inner block">CRAFT</span></div>
-                <div class="split-line"><span class="line-inner block text-transparent" style="-webkit-text-stroke: 1px rgba(255,255,255,0.2)">FUTURE</span></div>
-            </h1>
-            
-            <div class="mt-8 max-w-sm flex flex-col items-start relative z-20">
-                <p class="text-white/40 text-sm font-medium leading-relaxed mb-8 reveal-up">
-                    We architect digital experiences for brands that refuse to look like anyone else.
-                </p>
-                <div class="reveal-up">
-                    <button class="group relative px-8 py-4 bg-white text-black rounded-full font-bold text-xs uppercase overflow-hidden transition-transform hover:scale-105">
-                        <span class="relative z-10">Start a Project</span>
-                        <div class="absolute inset-0 bg-purple-500 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="absolute bottom-12 left-12 flex flex-col items-center opacity-20">
-            <div class="w-[1px] h-20 bg-gradient-to-b from-white to-transparent"></div>
-        </div>
-    </section>
-
-    <!-- About -->
-    <section class="py-40 px-6 border-y border-white/5 relative bg-[#050505]" id="about">
-        <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-32 items-center">
-            <div class="reveal-up">
-                <h3 class="text-[11px] font-black uppercase tracking-[0.5em] text-purple-500 mb-8">The Philosophy</h3>
-                <h2 class="text-6xl font-extrabold tracking-tighter mb-10 leading-[0.9]">Crafting digital <br><span class="text-white/30 italic font-light">legacies.</span></h2>
-                <p class="text-white/40 text-lg max-w-md">We don't just build sites; we architect digital environments where brands thrive and users engage.</p>
-            </div>
-            <div class="grid gap-16">
-                <div class="p-10 rounded-[32px] bg-white/[0.02] border border-white/5 reveal-up">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-4">Our Mission</h4>
-                    <p class="text-2xl font-semibold text-white/90">Make professional websites simple, fast, and accessible for everyone.</p>
-                </div>
-                <div class="p-10 rounded-[32px] bg-white/[0.02] border border-white/5 reveal-up">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-blue-400 mb-4">Our Vision</h4>
-                    <p class="text-2xl font-semibold text-white/90">Become a trusted digital partner for businesses worldwide.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Display Cards Section -->
-    <section class="py-40 px-6 overflow-hidden">
-        <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
-            <div class="reveal-up">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.6em] text-white/20 mb-6">Visual Excellence</h3>
-                <h2 class="text-5xl font-extrabold tracking-tighter mb-8 leading-tight">Interaction that <br><span class="text-purple-500">engages.</span></h2>
-                <p class="text-white/40 text-lg max-w-sm mb-12">Our UI components are built to respond to human touch and movement, creating a seamless connection between brand and user.</p>
-                <div class="flex gap-4">
-                    <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"/></svg>
-                    </div>
-                    <div>
-                        <p class="font-bold text-sm">Ultra-Responsive</p>
-                        <p class="text-xs text-white/30">Optimized for 120Hz displays</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="display-card-container reveal-up">
-                <div class="display-card card-stack-3">
-                    <div class="flex items-center gap-2">
-                        <span class="p-1 bg-blue-800/30 rounded-full">
-                            <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-width="2"/></svg>
-                        </span>
-                        <p class="text-lg font-medium text-blue-400 uppercase tracking-tighter">New</p>
-                    </div>
-                    <p class="text-lg text-white/80">Latest updates & features</p>
-                    <p class="text-xs font-bold text-white/20 uppercase tracking-widest">Today</p>
-                </div>
-
-                <div class="display-card card-stack-2">
-                    <div class="flex items-center gap-2">
-                        <span class="p-1 bg-blue-800/30 rounded-full">
-                            <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"/></svg>
-                        </span>
-                        <p class="text-lg font-medium text-blue-400 uppercase tracking-tighter">Popular</p>
-                    </div>
-                    <p class="text-lg text-white/80">Trending this week</p>
-                    <p class="text-xs font-bold text-white/20 uppercase tracking-widest">2 Days Ago</p>
-                </div>
-
-                <div class="display-card card-stack-1">
-                    <div class="flex items-center gap-2">
-                        <span class="p-1 bg-blue-800/30 rounded-full">
-                            <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-width="2"/></svg>
-                        </span>
-                        <p class="text-lg font-medium text-blue-400 uppercase tracking-tighter">Featured</p>
-                    </div>
-                    <p class="text-lg text-white/80">Discover amazing content</p>
-                    <p class="text-xs font-bold text-white/20 uppercase tracking-widest">Just Now</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Services -->
-    <section class="py-40 px-6" id="services">
-        <div class="max-w-7xl mx-auto">
-            <div class="mb-24 text-center">
-                <h2 class="text-[10px] font-black uppercase tracking-[0.6em] text-white/20 mb-6">Our Services</h2>
-                <h3 class="text-5xl font-extrabold tracking-tighter">Modern Website Solutions</h3>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="service-card reveal-up">
-                    <div class="mb-8 p-4 bg-purple-500/10 w-fit rounded-2xl">
-                        <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                    </div>
-                    <h4 class="text-2xl font-bold mb-4">Business Websites</h4>
-                    <p class="text-white/40 leading-relaxed text-sm">Professional websites designed for companies and enterprises looking for authority.</p>
-                </div>
-
-                <div class="service-card reveal-up" style="transition-delay: 0.1s">
-                    <div class="mb-8 p-4 bg-blue-500/10 w-fit rounded-2xl">
-                        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                    </div>
-                    <h4 class="text-2xl font-bold mb-4">Portfolio Websites</h4>
-                    <p class="text-white/40 leading-relaxed text-sm">Showcase your work with style and visual clarity that leaves a lasting impression.</p>
-                </div>
-
-                <div class="service-card reveal-up" style="transition-delay: 0.2s">
-                    <div class="mb-8 p-4 bg-emerald-500/10 w-fit rounded-2xl">
-                        <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <h4 class="text-2xl font-bold mb-4">Startup Websites</h4>
-                    <p class="text-white/40 leading-relaxed text-sm">Fast, scalable, and brand-focused solutions built to move as fast as your idea.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Brand -->
-    <section class="py-60 px-6 relative overflow-hidden bg-white text-black" id="brand">
-        <div class="absolute inset-0 opacity-5 pointer-events-none">
-            <div class="grid grid-cols-6 h-full">
-                <div class="border-r border-black"></div><div class="border-r border-black"></div><div class="border-r border-black"></div><div class="border-r border-black"></div><div class="border-r border-black"></div><div class="border-r border-black"></div>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
-            <h2 class="text-[12vw] font-black tracking-tighter leading-[0.85] mb-20 reveal-up">
-                YOUR BRAND.<br>YOUR IDENTITY.<br>YOUR WEBSITE.
-            </h2>
-        </div>
-    </section>
-
-    <!-- Contact -->
-    <section class="py-40 px-6 relative" id="contact">
-        <div class="glow-sphere w-[400px] h-[400px] bg-purple-600/20 bottom-[-10%] left-[10%]"></div>
-        <div class="max-w-7xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-32">
-                <div>
-                    <h2 class="text-7xl font-extrabold tracking-tighter mb-12 leading-tight reveal-up">Let's create something <span class="text-purple-500 italic">extraordinary.</span></h2>
-                    <p class="text-white/40 text-xl mb-16 max-w-sm reveal-up">Contact us today for a free project assessment.</p>
-                    
-                    <div class="space-y-8 reveal-up">
-                        <div class="flex items-center gap-6 group">
-                            <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-                                <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="1.5"/></svg>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-widest text-white/20 mb-1">Direct Email</p>
-                                <span class="text-xl font-bold">contactpixelbuild@gmail.com</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <form class="space-y-8 p-10 bg-white/[0.01] border border-white/5 rounded-[40px] backdrop-blur-sm reveal-up">
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Name</label>
-                            <input type="text" placeholder="John Doe" class="input-premium">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Email</label>
-                            <input type="email" placeholder="john@company.com" class="input-premium">
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Project Vision</label>
-                        <textarea placeholder="Tell us about your project..." rows="6" class="input-premium"></textarea>
-                    </div>
-                    <button type="submit" class="btn-elite w-full justify-center group">
-                        Launch Inquiry
-                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-20 px-12 border-t border-white/5">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-12 text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-                <div class="flex items-center gap-4"><span class="text-white">PIXELBUILD®</span><span>/</span><span>Digital Excellence</span></div>
-                <div class="flex gap-12"><a href="#" class="hover:text-white transition-colors">Behance</a><a href="#" class="hover:text-white transition-colors">Twitter</a><a href="#" class="hover:text-white transition-colors">Awwwards</a></div>
-                <div class="text-right">© 2026 PIXELBUILD. ALL RIGHTS RESERVED.</div>
-            </div>
-        </div>
-    </footer>
+            <linearGradient id="edgeRainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
+                <stop offset="50%" stop-color="rgba(200,150,255,0.3)"/>
+                <stop offset="100%" stop-color="rgba(100,255,255,0.5)"/>
+            </linearGradient>
+        </defs>
+    </svg>
 
     <script>
-        gsap.registerPlugin(ScrollTrigger);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
-        // Split line entrance for hero
-        gsap.from(".line-inner", {
-            y: "110%",
-            duration: 1.5,
-            ease: "expo.out",
-            stagger: 0.1
-        });
+        async function initApp() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=45&price_change_percentage=24h');
+                const data = await res.json();
 
-        // Entrance Animations for sections
-        const revealElements = document.querySelectorAll('.reveal-up');
-        revealElements.forEach(el => {
-            gsap.to(el, {
-                scrollTrigger: {
-                    trigger: el,
-                    start: "top 90%",
-                    toggleActions: "play none none none"
-                },
-                y: 0,
-                opacity: 1,
-                duration: 1.2,
-                ease: "power4.out"
-            });
-        });
+                const svg = d3.select("#chart").append("svg").attr("width", width).attr("height", height);
 
-        // Dynamic Spotlight for cards
-        document.querySelectorAll('.service-card').forEach(card => {
-            card.addEventListener('mousemove', e => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--x', `${x}px`);
-                card.style.setProperty('--y', `${y}px`);
-            });
-        });
+                const simulation = d3.forceSimulation(data)
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("charge", d3.forceManyBody().strength(10))
+                    .force("collide", d3.forceCollide(d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) + 5).strength(0.8))
+                    .alphaDecay(0.01);
+
+                const node = svg.selectAll(".bubble-group")
+                    .data(data).enter().append("g")
+                    .attr("class", "bubble-group")
+                    .call(d3.drag()
+                        .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.1).restart(); d.fx = d.x; d.fy = d.y; })
+                        .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+                        .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+                // 1. Գլխավոր թափանցիկ մարմինը (The Liquid Body)
+                node.append("circle")
+                    .attr("r", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35))
+                    .style("fill", d => d.price_change_percentage_24h >= 0 ? "url(#greenLiquid)" : "url(#redLiquid)")
+                    .style("stroke", "url(#edgeRainbow)")
+                    .style("stroke-width", "0.8px")
+                    .style("backdrop-filter", "blur(8px)");
+
+                // 2. Լրացուցիչ ներքին փայլ վերևում (Specular Highlight)
+                node.append("ellipse")
+                    .attr("rx", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.4)
+                    .attr("ry", d => Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.2)
+                    .attr("cx", d => -Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.25)
+                    .attr("cy", d => -Math.max(Math.abs(d.price_change_percentage_24h) * 8, 35) * 0.3)
+                    .style("fill", "rgba(255,255,255,0.25)")
+                    .style("filter", "blur(3px)");
+
+                // 3. Տեքստ
+                node.append("text").attr("class", "label-symbol").attr("dy", "-2").attr("text-anchor", "middle").text(d => d.symbol.toUpperCase());
+                node.append("text").attr("class", "label-percent").attr("dy", "16").attr("text-anchor", "middle").text(d => (d.price_change_percentage_24h > 0 ? "+" : "") + d.price_change_percentage_24h.toFixed(2) + "%");
+
+                simulation.on("tick", () => {
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+            } catch (err) { console.error(err); }
+        }
+        initApp();
     </script>
 </body>
 </html>
